@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include <iostream>
 #include <string>
-#include "BruteBucket.h"
 
 using namespace std;
 
@@ -71,6 +70,7 @@ public:
 	BucketNode *decant1, *decant2, *empty1, *empty2, *fill1, *fill2, *parent;
 	Bucket *one, *two;
 	int depth;
+	string action;
 	BucketNode(Bucket *one_, Bucket *two_, int depth_);
 };
 
@@ -81,14 +81,16 @@ BucketNode::BucketNode(Bucket *one_, Bucket *two_, int depth_)
 	depth = depth_;
 }
 
+void mainLoop(BucketNode CurrentBucketNode);
 
 BucketNode* decantBucket1(BucketNode *Parent)
 {
-	cout << "decant1" << endl;
 	Bucket one = *(*Parent).one;
 	Bucket two = *(*Parent).two;
 	one.decantBucket(two);
 	BucketNode current(&one, &two, (*Parent).depth + 1);
+	current.action = "Decant Bucket 1 into Bucket 2";
+	current.parent = Parent;
 	mainLoop(current);
 	return &current;
 }
@@ -99,6 +101,8 @@ BucketNode* decantBucket2(BucketNode *Parent)
 	Bucket two = *(*Parent).two;
 	two.decantBucket(one);
 	BucketNode current(&one, &two, (*Parent).depth + 1);
+	current.action = "Decant Bucket 2 into Bucket 1";
+	current.parent = Parent;
 	mainLoop(current);
 	return &current;
 }
@@ -108,6 +112,8 @@ BucketNode* emptyBucket1(BucketNode *Parent)
 	Bucket one = *(*Parent).one;
 	one.emptyBucket();
 	BucketNode current(&one, (*Parent).two, (*Parent).depth + 1);
+	current.action = "Empty Bucket 1";
+	current.parent = Parent;
 	mainLoop(current);
 	return &current;
 }
@@ -117,6 +123,8 @@ BucketNode* emptyBucket2(BucketNode *Parent)
 	Bucket two = *(*Parent).two;
 	two.emptyBucket();
 	BucketNode current((*Parent).one, &two, (*Parent).depth + 1);
+	current.action = "Empty Bucket 2";
+	current.parent = Parent;
 	mainLoop(current);
 	return &current;
 }
@@ -126,6 +134,8 @@ BucketNode* fillBucket1(BucketNode *Parent)
 	Bucket one = *(*Parent).one;
 	one.fillBucket();
 	BucketNode current(&one, (*Parent).two, (*Parent).depth + 1);
+	current.action = "Fill up Bucket 1";
+	current.parent = Parent;
 	mainLoop(current);
 	return &current;
 }
@@ -135,12 +145,19 @@ BucketNode* fillBucket2(BucketNode *Parent)
 	Bucket two = *(*Parent).two;
 	two.fillBucket();
 	BucketNode current((*Parent).one, &two, (*Parent).depth + 1);
+	current.action = "Fill up Bucket 2";
+	current.parent = Parent;
 	mainLoop(current);
 	return &current;
 }
 
 int maxDepth, goal;
 bool finished = false;
+
+bool hasFinished(Bucket one, Bucket two)
+{
+	return finished || one.curVol == goal || two.curVol == goal;
+}
 
 void mainLoop(BucketNode CurrentBucketNode)
 {
@@ -154,33 +171,39 @@ void mainLoop(BucketNode CurrentBucketNode)
 	{
 		cout << "Found solution! depth=" << CurrentBucketNode.depth << endl;
 		one.print();
-		one.print();
+		two.print();
+		BucketNode *CurrentParent = CurrentBucketNode.parent;
+		// while node has parent print out last action to solution
+		while (CurrentParent != NULL)
+		{
+			cout << "--" << (*CurrentParent).action << endl;
+			CurrentParent = (*CurrentParent).parent;
+		}
 		finished = true;
 		return;
 	}
 
-
-	if (!finished && one.curVol > 0 && two.curVol != two.maxVol)
+	if (!hasFinished(one, two) && one.curVol > 0 && two.curVol != two.maxVol)
 	{
 		CurrentBucketNode.decant1 = decantBucket1(&CurrentBucketNode);
 	}
-	if (!finished && two.curVol > 0 && one.curVol != two.maxVol)
+	if (!hasFinished(one, two) && two.curVol > 0 && one.curVol != two.maxVol)
 	{
 		CurrentBucketNode.decant2 = decantBucket2(&CurrentBucketNode);
 	}
-	if (!finished && one.curVol > 0)
+	if (!hasFinished(one, two) && one.curVol > 0)
 	{
 		CurrentBucketNode.empty1 = emptyBucket1(&CurrentBucketNode);
 	}
-	if (!finished && two.curVol > 0)
+	if (!hasFinished(one, two) && two.curVol > 0)
 	{
 		CurrentBucketNode.empty2 = emptyBucket2(&CurrentBucketNode);
 	}
-	if (!finished && one.curVol < one.maxVol)
+	if (!hasFinished(one, two) && one.curVol < one.maxVol)
 	{
 		CurrentBucketNode.fill1 = fillBucket1(&CurrentBucketNode);
 	}
-	if (!finished && two.curVol < two.maxVol)
+	if (!hasFinished(one, two) && two.curVol < two.maxVol)
 	{
 		CurrentBucketNode.fill2 = fillBucket2(&CurrentBucketNode);
 	}
@@ -209,11 +232,6 @@ int main()
 	Bucket Bucket2(maxVol2, 0, "Bucket2");
 
 	BucketNode Root(&Bucket1, &Bucket2, 0);
-
-	Bucket1.print();
-	Bucket2.print();
-
-	system("PAUSE");
 
 	mainLoop(Root);
 
