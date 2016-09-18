@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include <iostream>
+#include <iomanip>
 #include <string>
 
 using namespace std;
@@ -169,14 +170,15 @@ void mainLoop(BucketNode CurrentBucketNode)
 
 	if (one.curVol == goal || two.curVol == goal)
 	{
-		cout << "Found solution! depth=" << CurrentBucketNode.depth << endl;
+		cout << "Found solution! depth=" << CurrentBucketNode.depth << "\a" << endl;
 		one.print();
 		two.print();
 		BucketNode *CurrentParent = CurrentBucketNode.parent;
-		// while node has parent print out last action to solution
-		while (CurrentParent != NULL)
+		int depthCounter = CurrentBucketNode.depth;
+		// while node has parent, print out last action to solution
+		while (CurrentParent != nullptr)
 		{
-			cout << "--" << (*CurrentParent).action << endl;
+			cout << "Step " << setw(3) << depthCounter-- << ": " << (*CurrentParent).action << endl;
 			CurrentParent = (*CurrentParent).parent;
 		}
 		finished = true;
